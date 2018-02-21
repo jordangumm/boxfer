@@ -6,14 +6,13 @@ import yaml
 class Auth(object):
     def __init__(self, client_id, client_secret, access_token, config_fp):
         config = yaml.load(open(config_fp))
-        print config
-        
         oauth = OAuth2(
             client_id = client_id or config['oauth']['client_id'],
             client_secret = client_secret or config['oauth']['client_secret'],
             access_token = access_token or config['oauth']['access_token']
         )
         self.client = Client(oauth)
+
 
 @click.group()
 @click.option('--client_id', default=None)
@@ -29,8 +28,15 @@ def cli(ctx, client_id, client_secret, access_token, config_fp):
 @click.argument('path', required=False)
 @click.pass_obj
 def ls(auth, path):
-    print auth.client.folder(folder_id='0')
-
+    """ Lists items in directory path """
+    root_folder = auth.client.folder(folder_id='0').get()
+    for item in auth.client.folder(folder_id='0').get_items(limit=100, offset=0):
+        if type(item) == type(root_folder):
+            item = auth.client.folder(folder_id=item['id']).get()
+        else:
+            item = auth.client.file(file_id=item['id']).get()
+        print '{}\t{}\t{}'.format(item['owned_by']['login'], item['size'], item['name']).expandtabs(25)
+    
 
 if __name__ == "__main__":
     cli()
