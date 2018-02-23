@@ -11,5 +11,6 @@ Populate `config.yaml` with Developer Token and OAuth2.0 Credentials
 List files and directories:
 >$python pyboxfer.py ls [path]
 </br>
-Download files and full directoires:
+
+Download files and full directories:
 >$python pyboxfer.py download [path]
