@@ -26,27 +26,28 @@ def cli(ctx, client_id, client_secret, access_token, config_fp):
 
 
 @cli.command()
-@click.argument('dirpath', required=False)
+@click.argument('path', required=False)
 @click.option('--folder_id', '-i', required=False)
 @click.pass_context
 @click.pass_obj
-def lsdir(auth, ctx, dirpath, folder_id):
+def ls(auth, ctx, path, folder_id):
     """ Lists items in directory path """
     folder_id = folder_id or '0'
-
     folder = auth.client.folder(folder_id=folder_id).get()
     print folder['name']
 
     next_folder = None
-    if dirpath: next_folder = dirpath.split('/')[0]
-        
+    if path: next_folder = path.split('/')[0]   
     for item in auth.client.folder(folder_id=folder_id).get_items(limit=1000, offset=0):
         if type(item) == type(folder):
             item = auth.client.folder(folder_id=item['id']).get()
             if item['name'] == next_folder:
-                ctx.invoke(lsdir, dirpath='/'.join(dirpath.split('/')[1:]), folder_id=item['id'])
+                ctx.invoke(ls, path='/'.join(path.split('/')[1:]), folder_id=item['id'])
         else:
             item = auth.client.file(file_id=item['id']).get()
+            if item['name'] == next_folder and len(path.split('/')) == 1:
+                print '{}\t{}\t{}'.format(item['owned_by']['login'], item['size'], item['name']).expandtabs(25)
+                return
         if not next_folder: # only print if at end of given path
             print '{}\t{}\t{}'.format(item['owned_by']['login'], item['size'], item['name']).expandtabs(25)
 
@@ -60,7 +61,6 @@ def lsdir(auth, ctx, dirpath, folder_id):
 def download(auth, ctx, path, folder_id, output):
     if not os.path.exists(output): os.makedirs(output)
     folder_id = folder_id or '0'
-
     folder = auth.client.folder(folder_id=folder_id).get()
 
     next_folder = None
